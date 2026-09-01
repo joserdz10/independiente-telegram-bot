@@ -57,3 +57,16 @@ Variables:
 ## Siguiente mejora recomendada
 
 Agregar recepción de fotos en Telegram: seleccionas una noticia, mandas la fotografía real, el backend la encuadra dentro de Formato A/B/C y coloca automáticamente isotipo + footer maestro sin alterarlos.
+
+## Railway — corrección de tipografías (v2)
+
+Esta versión incluye `Dockerfile` para instalar `fonts-dejavu-core` y evitar cuadros vacíos/tofu en los textos generados por Sharp/libRSVG.
+
+En Railway:
+1. Root Directory: `/independiente_openai_telegram_direct_v2` si subes esta carpeta tal cual, o `/` si subes su contenido a la raíz del repo.
+2. Builder: Dockerfile (si Railway lo detecta, selecciónalo).
+3. Build Command: dejar vacío cuando uses Dockerfile.
+4. Start Command: dejar vacío cuando uses Dockerfile; el `CMD` ya es `npm start`.
+5. Mantén las mismas variables de entorno.
+
+La imagen de Fase 3 sigue siendo text/data-first: no inventa una fotografía periodística. El isotipo y el footer son assets fijos y se insertan sin redibujarse.
