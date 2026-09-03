@@ -8,6 +8,7 @@ const imageModel = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
 const OUT = path.resolve("output/backgrounds");
 
 export async function generateVisualBackground(story, production) {
+  if (production?.real_photo_required) return null;
   if (String(process.env.ENABLE_AI_VISUALS || "true").toLowerCase() === "false") return null;
   fs.mkdirSync(OUT, { recursive: true });
 

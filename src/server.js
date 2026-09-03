@@ -7,6 +7,7 @@ import { buildMesa, produceStory } from "./openai-news.js";
 import { putStory, getStory, patchStory, recentHeadlines, saveMesa, getLatestMesa, getEditorialConfig, saveEditorialConfig } from "./store.js";
 import { renderStory } from "./render.js";
 import { generateVisualBackground } from "./image-background.js";
+import { fetchRealSourceImage } from "./source-image.js";
 import { BRAND } from "./brand-book.js";
 
 const app=express();
@@ -58,11 +59,49 @@ function storyText(s){const points=(s.key_points||[]).map(x=>`• ${escapeHtml(x
 
 async function sendMesa(chatId,edition="MANUAL",userId=adminId()){await tg.sendMessage(chatId,`📰 <b>MESA DE REDACCIÓN · ${edition}</b>\nEl Independiente de Hidalgo Digital\n\n🔎 Buscando, contrastando y priorizando noticias actuales…`);const stories=await buildMesa({edition,previousHeadlines:recentHeadlines(20)});stories.forEach(putStory);saveMesa(chatId,stories,edition);const allowed=canProduce(chatId,userId);for(const s of stories)await tg.sendMessage(chatId,storyText(s),keyboard(s.id,allowed,s.requires_graphic));const recommended=stories.filter(s=>s.requires_graphic).map(s=>s.number);await tg.sendMessage(chatId,`🎨 <b>Recomendadas para gráfica:</b> ${recommended.length?recommended.join(", "):"ninguna"}${allowed?"\n\nPulsa <b>🎨 Generar gráfica</b> debajo de cada nota o usa <code>/grafica 1,3</code>.":""}`);return stories;}
 
-async function produceAndSend(chatId,story,angle="normal"){await tg.sendMessage(chatId,"✍️ Re-verificando, preparando copy y generando la pieza bajo el Brand Book…");const prod=await produceStory(story,angle);patchStory(story.id,{production:prod,status:"produced"});if(!prod.verified){await tg.sendMessage(chatId,`⚠️ <b>REQUIERE REVISIÓN EDITORIAL</b>\n${escapeHtml(prod.verification_note)}`);return;}const bg=await generateVisualBackground(story,prod);const imagePath=await renderStory(story,prod,bg);const base=process.env.PUBLIC_BASE_URL?.replace(/\/$/,"");if(!base)throw new Error("Falta PUBLIC_BASE_URL");const photoUrl=`${base}/output/${path.basename(imagePath)}`;const caption=`✅ <b>PIEZA LISTA</b> · Formato ${escapeHtml(prod.format)}\n\n<b>${escapeHtml(prod.headline)}</b>\n\n<b>COPY FACEBOOK</b>\n${escapeHtml(prod.facebook_copy)}\n\n${prod.hashtags.map(escapeHtml).join(" ")}\n\n<b>Fuente:</b> ${escapeHtml(prod.source_name)}\n<b>Identidad:</b> ${escapeHtml(BRAND.system)} · v${escapeHtml(BRAND.version)}`;await tg.sendPhoto(chatId,photoUrl,caption);}
+async function produceAndSend(chatId,story,angle="normal"){
+  await tg.sendMessage(chatId,"✍️ Re-verificando, preparando copy y generando la pieza bajo el Brand Book…");
+  const prod=await produceStory(story,angle);
+  patchStory(story.id,{production:prod,status:"produced"});
+  if(!prod.verified){
+    await tg.sendMessage(chatId,`⚠️ <b>REQUIERE REVISIÓN EDITORIAL</b>
+${escapeHtml(prod.verification_note)}`);
+    return;
+  }
+  let bg=await fetchRealSourceImage(story,prod);
+  if(prod.real_photo_required && !bg){
+    patchStory(story.id,{status:"needs_real_photo"});
+    await tg.sendMessage(chatId,`📷 <b>FALTA FOTO REAL</b>
 
-app.get("/health",(_req,res)=>res.json({ok:true,version:"5.2.0",schedule:mesaCron,timezone:mesaTimezone,editorial_chat:!!editorialChatId(),editorial_chat_id:editorialChatId()?"registered":null,admin:!!adminId(),production_controls:!!editorialChatId()||!!adminId(),brand_book:BRAND.version,brand_system:BRAND.system}));
+Esta nota requiere una fotografía real de: <b>${escapeHtml(prod.real_photo_subject||story.headline)}</b>.
+${escapeHtml(prod.real_photo_reason||"La política visual del medio no permite sustituir este sujeto por una imagen inventada.")}
 
-app.post("/telegram-webhook",async(req,res)=>{const secret=req.get("x-telegram-bot-api-secret-token");if(process.env.TELEGRAM_WEBHOOK_SECRET&&secret!==process.env.TELEGRAM_WEBHOOK_SECRET)return res.sendStatus(403);res.sendStatus(200);const update=req.body;try{if(update.message){const chatId=update.message.chat.id,userId=update.message.from?.id,chatType=update.message.chat.type||"private",text=String(update.message.text||"").trim();rememberEditorialChat(chatId,userId,chatType);if(text==="/start")await tg.sendMessage(chatId,"📰 <b>El Independiente · Mesa de Redacción</b>\n\nEste chat quedó registrado como mesa editorial. Recibirás automáticamente las mesas de las 08:00, 12:00 y 17:00 (hora de Hidalgo). Cada nota tendrá botones para <b>🎨 Generar gráfica</b>, <b>♻️ Otro enfoque</b> y <b>❌ Descartar</b>.\n\nUsa /mesa para generar una mesa ahora, /ultima para ver la última mesa programada o /estado para verificar los controles." );else if(text==="/estado")await tg.sendMessage(chatId,`⚙️ <b>ESTADO EDITORIAL</b>\nVersión: 5.2.0\nChat editorial: ${isEditorialChat(chatId)?"✅ ESTE CHAT":"❌ NO REGISTRADO"}\nControles de producción: ${canProduce(chatId,userId)?"✅ ACTIVOS":"❌ INACTIVOS"}\nHorario: 08:00 · 12:00 · 17:00\nZona: ${escapeHtml(mesaTimezone)}`);else if(text==="/mesa")await sendMesa(chatId,"MANUAL",userId);else if(text==="/ultima"){const mesa=getLatestMesa(chatId)||getLatestMesa("__scheduled__");if(!mesa){await tg.sendMessage(chatId,"Aún no hay una mesa programada guardada. Usa /mesa para generar una ahora.");return;}await tg.sendMessage(chatId,`🗂️ <b>ÚLTIMA MESA · ${escapeHtml(mesa.edition||"GUARDADA")}</b>`);for(const s of mesa.stories)await tg.sendMessage(chatId,storyText(s),keyboard(s.id,canProduce(chatId,userId),s.requires_graphic));}else if(text.startsWith("/grafica")){if(!canProduce(chatId,userId)){await tg.sendMessage(chatId,"🔒 La generación de piezas está reservada al chat editorial.");return;}const mesa=getLatestMesa(chatId);if(!mesa){await tg.sendMessage(chatId,"No hay una mesa reciente. Usa /mesa primero.");return;}const nums=text.replace("/grafica","").trim().split(/[,\s]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);if(!nums.length){await tg.sendMessage(chatId,"Usa, por ejemplo: <code>/grafica 1,3</code>");return;}for(const n of nums){const story=mesa.stories.find(s=>s.number===n);if(story)await produceAndSend(chatId,story);}}}
+No generé una imagen falsa. Revisa la fuente o proporciona una fotografía autorizada antes de publicar.`);
+    return;
+  }
+  if(!bg) bg=await generateVisualBackground(story,prod);
+  const imagePath=await renderStory(story,prod,bg);
+  const base=process.env.PUBLIC_BASE_URL?.replace(/\/$/,"");
+  if(!base)throw new Error("Falta PUBLIC_BASE_URL");
+  const photoUrl=`${base}/output/${path.basename(imagePath)}`;
+  const photoNote=prod.real_photo_required?" · foto real de fuente":"";
+  const caption=`✅ <b>PIEZA LISTA</b> · Formato ${escapeHtml(prod.format)}${photoNote}
+
+<b>${escapeHtml(prod.headline)}</b>
+
+<b>COPY FACEBOOK</b>
+${escapeHtml(prod.facebook_copy)}
+
+${prod.hashtags.map(escapeHtml).join(" ")}
+
+<b>Fuente:</b> ${escapeHtml(prod.source_name)}
+<b>Identidad:</b> ${escapeHtml(BRAND.system)} · v${escapeHtml(BRAND.version)}`;
+  await tg.sendPhoto(chatId,photoUrl,caption);
+}
+
+app.get("/health",(_req,res)=>res.json({ok:true,version:"5.3.0",schedule:mesaCron,timezone:mesaTimezone,editorial_chat:!!editorialChatId(),editorial_chat_id:editorialChatId()?"registered":null,admin:!!adminId(),production_controls:!!editorialChatId()||!!adminId(),brand_book:BRAND.version,brand_system:BRAND.system}));
+
+app.post("/telegram-webhook",async(req,res)=>{const secret=req.get("x-telegram-bot-api-secret-token");if(process.env.TELEGRAM_WEBHOOK_SECRET&&secret!==process.env.TELEGRAM_WEBHOOK_SECRET)return res.sendStatus(403);res.sendStatus(200);const update=req.body;try{if(update.message){const chatId=update.message.chat.id,userId=update.message.from?.id,chatType=update.message.chat.type||"private",text=String(update.message.text||"").trim();rememberEditorialChat(chatId,userId,chatType);if(text==="/start")await tg.sendMessage(chatId,"📰 <b>El Independiente · Mesa de Redacción</b>\n\nEste chat quedó registrado como mesa editorial. Recibirás automáticamente las mesas de las 08:00, 12:00 y 17:00 (hora de Hidalgo). Cada nota tendrá botones para <b>🎨 Generar gráfica</b>, <b>♻️ Otro enfoque</b> y <b>❌ Descartar</b>.\n\nUsa /mesa para generar una mesa ahora, /ultima para ver la última mesa programada o /estado para verificar los controles." );else if(text==="/estado")await tg.sendMessage(chatId,`⚙️ <b>ESTADO EDITORIAL</b>\nVersión: 5.3.0\nChat editorial: ${isEditorialChat(chatId)?"✅ ESTE CHAT":"❌ NO REGISTRADO"}\nControles de producción: ${canProduce(chatId,userId)?"✅ ACTIVOS":"❌ INACTIVOS"}\nHorario: 08:00 · 12:00 · 17:00\nZona: ${escapeHtml(mesaTimezone)}`);else if(text==="/mesa")await sendMesa(chatId,"MANUAL",userId);else if(text==="/ultima"){const mesa=getLatestMesa(chatId)||getLatestMesa("__scheduled__");if(!mesa){await tg.sendMessage(chatId,"Aún no hay una mesa programada guardada. Usa /mesa para generar una ahora.");return;}await tg.sendMessage(chatId,`🗂️ <b>ÚLTIMA MESA · ${escapeHtml(mesa.edition||"GUARDADA")}</b>`);for(const s of mesa.stories)await tg.sendMessage(chatId,storyText(s),keyboard(s.id,canProduce(chatId,userId),s.requires_graphic));}else if(text.startsWith("/grafica")){if(!canProduce(chatId,userId)){await tg.sendMessage(chatId,"🔒 La generación de piezas está reservada al chat editorial.");return;}const mesa=getLatestMesa(chatId);if(!mesa){await tg.sendMessage(chatId,"No hay una mesa reciente. Usa /mesa primero.");return;}const nums=text.replace("/grafica","").trim().split(/[,\s]+/).map(Number).filter(n=>Number.isInteger(n)&&n>0);if(!nums.length){await tg.sendMessage(chatId,"Usa, por ejemplo: <code>/grafica 1,3</code>");return;}for(const n of nums){const story=mesa.stories.find(s=>s.number===n);if(story)await produceAndSend(chatId,story);}}}
 if(update.callback_query){const q=update.callback_query,chatId=q.message.chat.id,userId=q.from?.id,[action,id]=String(q.data||"").split(":");if(!canProduce(chatId,userId)){await tg.answerCallback(q.id,"Solo el chat editorial puede producir piezas");return;}const story=getStory(id);if(!story){await tg.answerCallback(q.id,"La nota ya no está disponible");return;}if(action==="discard"){patchStory(id,{status:"discarded"});await tg.answerCallback(q.id,"Descartada");await tg.sendMessage(chatId,`❌ Descartada: <b>${escapeHtml(story.headline)}</b>`);}else if(action==="reframe"){await tg.answerCallback(q.id,"Buscando otro enfoque…");const prod=await produceStory(story,"Busca un ángulo editorial distinto pero fiel a los mismos hechos. Evita sensacionalismo.");patchStory(id,{production:prod,status:"reframed"});await tg.sendMessage(chatId,`♻️ <b>OTRO ENFOQUE</b>\n\n<b>${escapeHtml(prod.headline)}</b>\n${escapeHtml(prod.subheadline)}\n\n${escapeHtml(prod.facebook_copy)}\n\n${prod.hashtags.map(escapeHtml).join(" ")}`,keyboard(id,true,true));}else if(action==="approve"){await tg.answerCallback(q.id,"Generando pieza…");await produceAndSend(chatId,story);}}
 }catch(e){console.error(e);const chatId=update.message?.chat?.id??update.callback_query?.message?.chat?.id;if(chatId)await tg.sendMessage(chatId,`⚠️ Error: ${escapeHtml(String(e.message).slice(0,600))}`).catch(()=>{});}});
 

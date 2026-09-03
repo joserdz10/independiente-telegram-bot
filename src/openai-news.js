@@ -60,9 +60,12 @@ const productionSchema = {
     verified: { type: "boolean" },
     verification_note: { type: "string" },
     source_name: { type: "string" },
-    source_url: { type: "string" }
+    source_url: { type: "string" },
+    real_photo_required: { type: "boolean" },
+    real_photo_subject: { type: "string" },
+    real_photo_reason: { type: "string" }
   },
-  required: ["headline","subheadline","support_text","facebook_copy","hashtags","key_stat","key_stat_label","format","visual_type","visual_prompt","verified","verification_note","source_name","source_url"],
+  required: ["headline","subheadline","support_text","facebook_copy","hashtags","key_stat","key_stat_label","format","visual_type","visual_prompt","verified","verification_note","source_name","source_url","real_photo_required","real_photo_subject","real_photo_reason"],
   additionalProperties: false
 };
 
@@ -136,15 +139,18 @@ export async function produceStory(story, angle = "normal") {
 ${BRAND_BOOK_PROMPT}
 
 APLICACIÓN OPERATIVA — REFERENCIA APROBADA:
-- La salida debe conservar el estilo limpio del arte aprobado por el usuario: imagen dominante, categoría compacta, isotipo fijo, titular editorial dentro de márgenes, bajada breve, dato solo si aporta, fuente discreta y footer maestro exacto.
-- A: personaje/política/declaración. Si la nota trata sobre una persona o lugar identificable, el visual debe corresponder a ese sujeto y no ser genérico. Prioriza una apariencia fotográfica natural y periodística. Si no existe una fotografía de fuente proporcionada al sistema, no la presentes como cobertura documental real.
-- B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad. Sin collage.
-- C: dato/cifra/resultado dominante. Si se usa key_stat, NO repitas el valor de key_stat dentro del titular visual. El titular debe nombrar el fenómeno y la cifra va solo en el bloque de dato. key_stat_label debe ser breve y complementaria (periodo, alcance, universo o contraste), nunca una repetición literal del titular o la bajada.
-- El titular visual debe ser claro, preferentemente 6-10 palabras y máximo 12. Si el concepto no cabe, reescribe de forma más breve sin alterar el hecho.
+- TODAS las piezas A, B y C obedecen las mismas reglas de identidad, tipografía, encuadre y fotografía real.
+- La salida debe conservar el estilo limpio del arte aprobado por el usuario: imagen dominante cuando corresponda, categoría compacta, isotipo fijo, titular editorial dentro de márgenes, bajada breve, dato solo si aporta, fuente discreta y footer maestro exacto.
+- A: personaje/política/declaración. Si la nota trata de una persona, lugar, edificio, vialidad, institución o hecho identificable, marca real_photo_required=true y real_photo_subject con el sujeto exacto. No usar personas inventadas ni escenas genéricas.
+- B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad. Si existe sujeto real identificable, marca real_photo_required=true. Sin collage.
+- C: dato/cifra/resultado dominante. Si existe equipo, jugador, persona, lugar o evento identificable, marca real_photo_required=true para usar foto real de apoyo. Si se usa key_stat, NO repitas su valor dentro del titular visual. key_stat_label debe ser breve y complementaria.
+- DEPORTES/FUTBOL: real_photo_required=true SIEMPRE. Si habla de Club Pachuca/Tuzos, FC Juárez o cualquier equipo, jugador, técnico, directivo, estadio, partido, entrenamiento o afición, real_photo_subject debe nombrar exactamente el equipo/persona/estadio/evento que debe aparecer. Nunca usar futbolistas inventados.
+- El titular visual debe ser claro, preferentemente 6-10 palabras y máximo 12. Si no cabe, reescribe más breve sin alterar el hecho.
 - subheadline máximo 2 líneas; support_text muy breve.
-- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía. Si la cifra es una fecha o frase extensa, manténla compacta.
+- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía.
 - Nunca propongas texto que dependa de salirse de una caja o margen para ser legible.
-- visual_prompt debe describir únicamente el COMPONENTE VISUAL DE FONDO, SIN TEXTO, SIN LOGOS, SIN FOOTER, SIN MARCAS, SIN FECHA.
+- visual_prompt describe únicamente el fondo/contexto; SIN TEXTO, SIN LOGOS, SIN FOOTER, SIN MARCAS, SIN FECHA.
+- real_photo_reason debe explicar brevemente por qué se exige foto real.
 
 COPY FACEBOOK: 2 a 4 párrafos breves, claro y publicable; cierra con pregunta o recomendación natural cuando aplique; hashtags aparte (3-5).`,
     input: `Historia candidata: ${JSON.stringify(story)}\nEnfoque solicitado: ${angle}. Produce la versión final lista para pieza gráfica y Facebook.`,

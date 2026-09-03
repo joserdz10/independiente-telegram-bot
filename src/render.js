@@ -47,6 +47,23 @@ const BODY = `'${escFont(FONTS.body.family)}'`;
 
 console.log(`Fuentes renderer: titular=${FONTS.headline.family}; UI=${FONTS.ui.family}; cuerpo=${FONTS.body.family}`);
 
+const STRICT_FONTS = String(process.env.STRICT_BRAND_FONTS || "true").toLowerCase() !== "false";
+function assertBrandFonts(){
+  const checks=[
+    ["Newsreader",FONTS.headline],
+    ["Sora",FONTS.ui],
+    ["Inter",FONTS.body]
+  ];
+  const missing=checks.filter(([name,info])=>!info?.file || !String(info.family||"").toLowerCase().includes(name.toLowerCase()));
+  if(missing.length){
+    const detail=missing.map(([name,info])=>`${name}=>${info?.family||"no instalada"}`).join(", ");
+    const msg=`Fuentes de marca no disponibles: ${detail}. No se generarán piezas con fuentes sustitutas.`;
+    if(STRICT_FONTS) throw new Error(msg);
+    console.warn(msg);
+  }
+}
+assertBrandFonts();
+
 // Medición REAL de glifos. Esta es la diferencia clave de V5.2:
 // ya no estimamos el ancho por número de caracteres, medimos la fuente que usa Railway.
 function measuredWidth(text, fontSize, fontInfo, weight=400) {

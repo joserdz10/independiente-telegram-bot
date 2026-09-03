@@ -1,33 +1,31 @@
-# Brand Book Operativo — Territorio Independiente — v5
+# Brand Book Operativo V5.3 — Territorio Independiente
 
-## Identidad fija
-- Footer maestro exacto: `assets/footer_master.png`.
-- Isotipo exacto: `assets/isotipo_i.png`.
-- Paleta: verde mineral, verde profundo, hueso, carbón y cobre.
-- Tipografía: Newsreader para titulares, Sora para categorías/datos, Inter para bajadas y cuerpo.
-- Salida: 1080x1350, 4:5.
+## Fijos
+- 1080x1350 (4:5).
+- Footer: `assets/footer_master.png`.
+- Isotipo: `assets/isotipo_i.png`.
+- Newsreader: titulares.
+- Sora: categorías y datos.
+- Inter: bajadas y fuente.
+- Verde mineral + hueso + cobre.
 
-## Referencia visual aprobada
-La pieza debe seguir el nivel de limpieza del ejemplo aprobado de política: imagen dominante relacionada con la noticia, banda de categoría compacta arriba, isotipo arriba a la derecha, titular editorial perfectamente encuadrado, bajada corta, dato solo si aporta, fuente discreta y footer maestro exacto.
+## Regla común A/B/C
+Toda pieza debe respetar márgenes, tipografía, footer, isotipo, jerarquía y fuente. Ningún texto puede salirse del lienzo.
 
-## Regla absoluta de encuadre
-Ningún texto puede salir del lienzo. Si no cabe, el sistema debe: 1) abreviar el titular sin alterar el hecho, 2) reducir tamaño, 3) aumentar saltos de línea. Nunca cortar ni desbordar.
+## Foto real
+Si la nota trata de persona, equipo, jugador, técnico, estadio, lugar, vialidad, edificio, institución, evento o hecho concreto, se prioriza foto real de fuente.
 
-## Formato A
-- Persona, política, declaración o lugar específico.
-- El visual debe corresponder al sujeto principal y evitar fondos genéricos.
-- Una sola escena.
-- El texto ocupa una columna protegida a la izquierda.
+### Deportes
+Toda nota deportiva/futbolística exige foto real. Para Pachuca/Tuzos: jugadores reales, uniforme real, Estadio Hidalgo o contexto real del club. Nunca futbolistas inventados.
 
-## Formato B
-- Fotografía dominante para local, servicio público, clima, seguridad y movilidad.
-- Sin collage.
-- Titular, bajada y dato siempre dentro del área segura.
+## A
+Persona/política/declaración: foto real del sujeto cuando sea identificable, una sola escena, texto contenido.
 
-## Formato C
-- La cifra es protagonista.
-- Si existe `key_stat`, no repetir ese valor dentro del titular.
-- `key_stat_label` agrega contexto; no repite el dato.
+## B
+Foto dominante: una sola fotografía, sin collage, titular y bajada breves.
 
-## Fuentes
-La fuente periodística se muestra en la parte inferior del área editorial, por encima del footer, y debe quedar completamente encuadrada.
+## C
+Dato protagonista: no repetir cifra/titular/etiqueta. Si hay equipo o persona identificable, la foto de apoyo también debe ser real.
+
+## Si no hay foto real
+Cuando `real_photo_required=true` y la fuente no ofrece imagen utilizable, el bot no genera una falsa: detiene producción y avisa al editor.
