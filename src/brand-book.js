@@ -1,7 +1,7 @@
 export const BRAND = Object.freeze({
   name: "El Independiente de Hidalgo Digital",
   system: "Territorio Independiente",
-  version: "5.0-strict",
+  version: "5.2-strict",
   canvas: { width: 1080, height: 1350, ratio: "4:5" },
   colors: {
     mineral: "#173C3A",

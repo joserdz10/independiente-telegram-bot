@@ -1,55 +1,32 @@
-# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v5
+# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v5.2
 
-Versión enfocada en reproducir de forma consistente el estilo visual aprobado por el usuario: fotografía dominante relacionada con la nota, tipografía institucional, composición limpia, texto totalmente contenido, fuente discreta y footer maestro exacto.
+Arquitectura: Telegram -> Railway -> OpenAI -> mesa editorial -> producción -> renderer estricto del Brand Book -> Telegram.
 
-## Cambios principales de v5
+## Corrección principal de v5.2
 
-- Prompt visual final integrado en `src/brand-book.js` y `src/openai-news.js`.
-- El renderer es ahora la autoridad final de encuadre: ajusta tamaño y saltos de línea para evitar que el texto se salga del lienzo.
-- Formato A: sujeto/lugar/hecho específico como foco visual, composición con texto protegido a la izquierda.
-- Formato B: fotografía dominante, sin collage, con caja de dato compacta.
-- Formato C: cifra protagonista sin repetir el mismo valor dentro del titular.
-- Tipografía institucional: Newsreader / Sora / Inter.
-- Footer e isotipo siguen siendo assets fijos exactos.
-- Fuente de la nota se ajusta automáticamente dentro del ancho disponible.
-- `/health` reporta `version: 5.0.0` y `brand_book: 5.0-strict`.
+La V5/V5.1 todavía podía sacar titulares del lienzo porque el renderer calculaba el ancho de las letras con una estimación por carácter. Eso no coincide de forma fiable con el ancho real de **Newsreader**, especialmente en mayúsculas y peso 900.
 
-## Horarios de mesa
+V5.2 reemplaza esa estimación por **medición real de glifos** usando la misma fuente resuelta por `fontconfig` en Railway y `fontkit`. Así el renderer decide saltos de línea y tamaño de letra usando el ancho real de la tipografía que efectivamente se renderiza.
 
-- 08:00
-- 12:00
-- 17:00
-- Zona: `America/Mexico_City`
+También:
+- añade margen de seguridad extra en A/B/C;
+- reduce el ancho máximo de titulares para preservar aire editorial;
+- mide también categorías, bajadas, cifras, etiquetas y fuente periodística;
+- conserva Newsreader / Sora / Inter del manual;
+- mantiene footer e isotipo como assets exactos;
+- mantiene las reglas A/B/C y las mesas automáticas 08:00, 12:00 y 17:00;
+- mantiene los reintentos de Telegram de V5.1.
 
-## Sustitución en GitHub
+## Comprobación después del deploy
 
-1. Sustituye el contenido actual del repo por el contenido de este paquete.
-2. Mantén el Root Directory de Railway en `/`.
-3. Haz Commit en GitHub.
-4. Railway deberá mostrar en Deploy Logs:
+En Railway debe aparecer:
 
-```text
-independiente-telegram-openai@5.0.0 start
-```
+`independiente-telegram-openai@5.2.0 start`
 
-5. En Telegram prueba `/estado`, `/mesa` y una gráfica A, B y C.
+Y `/health` debe reportar `version: 5.2.0` y `brand_book: 5.2-strict`.
 
-## Assets maestros
+## Variables
 
-- `assets/footer_master.png`
-- `assets/isotipo_i.png`
+Obligatorias: `TELEGRAM_BOT_TOKEN`, `OPENAI_API_KEY`, `PUBLIC_BASE_URL`, `TELEGRAM_WEBHOOK_SECRET`.
 
-No deben ser redibujados por IA.
-
-
-## V5.1 - Resiliencia de conexión con Telegram
-
-- Corrige fallos transitorios `TypeError: fetch failed` / `ETIMEDOUT` hacia `api.telegram.org`.
-- Prioriza IPv4 en Node/Railway.
-- Añade hasta 4 reintentos automáticos con backoff exponencial.
-- Reintenta también HTTP 408/425/429/5xx y respeta `retry_after` de Telegram.
-- Timeout configurable por solicitud.
-
-Variables opcionales:
-- `TELEGRAM_RETRY_ATTEMPTS=4`
-- `TELEGRAM_REQUEST_TIMEOUT_MS=25000`
+Recomendadas: `OPENAI_MODEL=gpt-5.6-sol`, `OPENAI_IMAGE_MODEL=gpt-image-2`, `OPENAI_IMAGE_QUALITY=medium`, `ENABLE_AI_VISUALS=true`, `MESA_CRON=0 8,12,17 * * *`, `MESA_TIMEZONE=America/Mexico_City`.
