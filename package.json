@@ -1,0 +1,20 @@
+{
+  "name": "independiente-telegram-openai",
+  "version": "4.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "setup:webhook": "node src/setup-webhook.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "openai": "^5.16.0",
+    "sharp": "^0.34.3",
+    "node-cron": "^4.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
