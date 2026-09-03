@@ -40,3 +40,16 @@ independiente-telegram-openai@5.0.0 start
 - `assets/isotipo_i.png`
 
 No deben ser redibujados por IA.
+
+
+## V5.1 - Resiliencia de conexión con Telegram
+
+- Corrige fallos transitorios `TypeError: fetch failed` / `ETIMEDOUT` hacia `api.telegram.org`.
+- Prioriza IPv4 en Node/Railway.
+- Añade hasta 4 reintentos automáticos con backoff exponencial.
+- Reintenta también HTTP 408/425/429/5xx y respeta `retry_after` de Telegram.
+- Timeout configurable por solicitud.
+
+Variables opcionales:
+- `TELEGRAM_RETRY_ATTEMPTS=4`
+- `TELEGRAM_REQUEST_TIMEOUT_MS=25000`
