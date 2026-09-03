@@ -1,36 +1,40 @@
-# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v4
+# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v4.3
 
 Arquitectura: Telegram -> webhook Node.js en Railway -> OpenAI Responses API + Web Search -> mesa editorial -> aprobación -> GPT Image (solo fondo visual) -> renderer rígido del Brand Book -> Telegram.
 
-## Qué cambia en v4
+## Qué cambia en v4.3
 
-- Integra un **Brand Book operativo estricto** en `src/brand-book.js`.
-- El prompt editorial y el prompt de imagen comparten las mismas reglas de identidad.
-- El renderer valida la pieza antes de exportarla.
-- Formatos A/B/C ya no son solo una recomendación: tienen layouts distintos y obligatorios.
-- Formato B: una sola escena/foto dominante; el validador rechaza prompts que pidan collage o mosaico.
-- Formato A: personaje/escena institucional con texto a la izquierda.
-- Formato C: dato/cifra dominante.
-- Titular máximo 12 palabras y bajadas recortadas a longitudes editoriales seguras.
-- No se renderizan fechas por defecto.
-- Footer e isotipo siguen siendo assets fijos exactos; nunca los genera la IA.
-- Paleta fija: verde mineral, hueso, carbón y cobre; acentos de seguridad/deportes solo cuando corresponde.
-- El Dockerfile intenta instalar en Railway las tipografías oficiales **Newsreader, Sora e Inter** durante el build; si una descarga externa falla, el renderer usa fallbacks seguros para no tumbar el bot. No se incluyen archivos de fuentes en el repositorio/ZIP.
-- Mesas programadas a las **08:00, 12:00 y 17:00**, zona `America/Mexico_City`.
+- Integra tu feedback operativo sobre las **opciones A, B y C**.
+- **Opción / Formato A** ahora obliga al bot a priorizar un fondo visual directamente relacionado con la nota: persona, lugar o hecho específico, evitando escenas genéricas cuando el sujeto está claro.
+- **Opción / Formato B** mantiene fotografía dominante, pero con reglas más estrictas para evitar saturación y desbordes de texto.
+- **Opción / Formato C** ahora prohíbe la repetición innecesaria del mismo dato entre titular, cifra y etiqueta secundaria.
+- Se refuerza la instrucción de usar la **tipografía institucional del manual**.
+- Se endurece la regla de que el texto debe quedar **encuadrado dentro del lienzo**.
+- El renderer ahora ajusta mejor cifras y cajas de dato para que no se salgan del post.
+- `/health` reporta `version: 4.3.0` y `brand_book: 4.3-strict`.
 
-## Reglas clave de identidad
+## Reglas visuales integradas
 
-El sistema visual es **Territorio Independiente**.
-
-- A = personaje / política / declaración.
-- B = fotografía dominante / local / servicio público / seguridad / clima / movilidad / educación.
-- C = dato / cifra / comparativo / economía / resultados / deportes.
+### Formato A
+- Imagen visual directamente relacionada con la nota.
+- Si habla de una persona, el visual debe corresponder a esa persona.
+- Si habla de un lugar, el visual debe corresponder a ese lugar o entorno reconocible.
+- Evitar fondos genéricos.
 - Una sola escena.
-- Sin collage en B.
-- Sin fechas innecesarias.
-- Sin texto, logos, footer o marcas dentro del fondo generado por IA.
-- El renderer coloca categoría, titular, bajada, dato, isotipo, fuente y footer maestro.
-- Salida estándar: 1080x1350.
+- Texto completamente dentro del lienzo.
+
+### Formato B
+- Fotografía/escena dominante.
+- Sin collage.
+- Sin saturación.
+- Titular y bajada compactos.
+- Cajas de dato ajustadas para no salirse.
+
+### Formato C
+- Cifra protagonista.
+- El texto secundario debe complementar, no repetir.
+- Diseño limpio y sintético.
+- Caja de cifra y tipografía con ajuste automático.
 
 ## Variables Railway
 
@@ -39,10 +43,10 @@ Obligatorias:
 - `OPENAI_API_KEY`
 - `PUBLIC_BASE_URL`
 - `TELEGRAM_WEBHOOK_SECRET`
-- `ADMIN_TELEGRAM_USER_ID`
-- `EDITORIAL_CHAT_ID`
 
 Recomendadas:
+- `ADMIN_TELEGRAM_USER_ID`
+- `EDITORIAL_CHAT_ID`
 - `OPENAI_MODEL=gpt-5.6-sol`
 - `OPENAI_IMAGE_MODEL=gpt-image-2`
 - `OPENAI_IMAGE_QUALITY=medium`
@@ -60,31 +64,10 @@ Recomendadas:
 - `♻️ Otro enfoque` — reformula el ángulo sin alterar hechos.
 - `❌ Descartar` — descarta.
 
-## Despliegue sobre tu bot actual
+## Sustitución en tu repo
 
-1. Sustituye los archivos actuales del repo por los de v4.
-2. Conserva `assets/footer_master.png` e `assets/isotipo_i.png` de esta versión: son los assets maestros aprobados.
+1. Borra o reemplaza el contenido actual del repo por el contenido de este paquete.
+2. Conserva `assets/footer_master.png` e `assets/isotipo_i.png` de esta versión.
 3. Haz commit en GitHub.
-4. Railway redeployará automáticamente con Dockerfile.
-5. No necesitas cambiar dominio ni webhook si sigues usando el mismo servicio.
-6. Revisa `/health` y prueba `/mesa` + una sola `🎨 Generar gráfica` antes de producción masiva.
-
-## V4.1 - Chat editorial automático
-
-- Ya no es obligatorio escribir `EDITORIAL_CHAT_ID` manualmente para uso privado.
-- Al enviar `/start` o `/mesa`, el bot registra automáticamente ese chat como la mesa editorial si no existe un administrador configurado.
-- A las 08:00, 12:00 y 17:00 el bot envía en ese mismo chat la mesa completa, no solo una notificación.
-- Cada nota enviada al propietario editorial incluye botones: `🎨 Generar gráfica`, `♻️ Otro enfoque` y `❌ Descartar`.
-- Si a la hora programada todavía no existe un chat registrado, la mesa se genera y se guarda internamente; puede consultarse después con `/ultima`.
-- Para producción con múltiples usuarios sigue siendo recomendable configurar `ADMIN_TELEGRAM_USER_ID` explícitamente.
-
-
-## V4.2 - Botones de producción en el mismo chat
-
-- Corrige el caso en que la mesa aparecía sin botones cuando no existía `ADMIN_TELEGRAM_USER_ID`.
-- El chat editorial registrado por `/start` o `/mesa` queda autorizado para producir piezas aunque no haya un admin configurado por variable.
-- Las mesas automáticas de 08:00, 12:00 y 17:00 muestran debajo de cada nota los botones `🎨 Generar gráfica`, `♻️ Otro enfoque` y `❌ Descartar`.
-- Los callbacks y `/grafica` aceptan al chat editorial como autoridad de producción.
-- `/health` reporta `version: 4.2.0` y `production_controls`.
-
-En V4.2 no es obligatorio configurar `EDITORIAL_CHAT_ID` para un uso privado: el primer `/start` o `/mesa` en chat privado registra el destino. Telegram sí necesita internamente un chat de destino para poder enviar mensajes programados, pero el bot lo aprende automáticamente. Para un entorno público/multiusuario, configura `ADMIN_TELEGRAM_USER_ID` y `EDITORIAL_CHAT_ID` explícitamente.
+4. Railway redeployará automáticamente.
+5. Prueba `/mesa` y luego `🎨 Generar gráfica` en una nota de cada formato.

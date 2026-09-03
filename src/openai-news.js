@@ -94,11 +94,17 @@ COPY FACEBOOK: cada historia debe incluir un copy sugerido publicable, de 2 a 4 
 
 DECISIÓN GRÁFICA: requires_graphic=true cuando sea prioridad ALTA, tenga impacto ciudadano, fuerte potencial visual o sea servicio público, seguridad, clima, educación, tráfico, política o la principal noticia del momento. false cuando sea secundaria, repetitiva o de bajo valor visual.
 
-FORMATOS DEL BRAND BOOK: A = titular/personaje/política; B = fotografía dominante para local, servicio público, clima, seguridad, movilidad; C = dato/cifra/resultado/estadística. visual_prompt debe describir una sola composición clara. En formato B está prohibido collage/mosaico. El footer, logo e isotipo NO deben ser generados por la IA: el renderer los añade como assets maestros exactos.
+FORMATOS DEL BRAND BOOK: A = personaje/política/declaración; B = fotografía dominante para local, servicio público, clima, seguridad, movilidad; C = dato/cifra/resultado/estadística. visual_prompt debe describir una sola composición clara. En formato B está prohibido collage/mosaico. El footer, logo e isotipo NO deben ser generados por la IA: el renderer los añade como assets maestros exactos.
+
+REGLAS EXTRA DE PRODUCCIÓN VISUAL:
+- Formato A: si la nota habla de una persona, debe visualizar a esa persona o una representación visual claramente alineada con ella; si habla de un lugar, el fondo debe mostrar ese lugar o entorno reconocible. Evita escenas genéricas.
+- Formato B: una sola escena dominante y totalmente relacionada con el hecho; no repetir elementos ni saturar.
+- Formato C: la cifra principal debe ser protagonista y el dato secundario no debe repetir literalmente el titular; debe aportar contexto complementario.
+- Todo texto final debe caber dentro del lienzo. Por eso el titular debe ser breve y el dato destacado debe ser compacto.
 
 ${BRAND_BOOK_PROMPT}
 
-IMPORTANTE SOBRE IMÁGENES: no inventes que una imagen generada es fotografía real del acontecimiento. Si no se dispone de fotografía de fuente autorizada, el visual debe ser una ilustración editorial de apoyo, sin texto ni logotipos incrustados.
+IMPORTANTE SOBRE IMÁGENES: el sistema debe buscar un fondo visual coherente con el sujeto principal de la nota. No afirmar que una imagen generada proviene de cobertura documental si no existe tal evidencia. El visual debe ser editorial de apoyo, sin texto ni logotipos incrustados.
 ${previous}
 
 Devuelve únicamente el JSON estructurado.`,
@@ -130,10 +136,12 @@ export async function produceStory(story, angle = "normal") {
 ${BRAND_BOOK_PROMPT}
 
 APLICACIÓN OPERATIVA:
-- A: personaje/política/declaración. B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad. C: dato/cifra/resultado dominante.
+- A: personaje/política/declaración. Si la nota trata sobre una persona o lugar identificable, el visual debe corresponder a ese sujeto y no ser genérico.
+- B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad.
+- C: dato/cifra/resultado dominante. Si se usa key_stat, key_stat_label debe ser breve y complementaria (periodo, alcance, universo o contraste), nunca una repetición literal del titular o la bajada.
 - El titular visual debe ser claro y máximo 12 palabras.
 - subheadline máximo 2 líneas; support_text muy breve.
-- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía.
+- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía. Si la cifra es una fecha o frase extensa, manténla compacta para que quepa en una caja editorial.
 - visual_prompt debe describir únicamente el COMPONENTE VISUAL DE FONDO, SIN TEXTO, SIN LOGOS, SIN FOOTER, SIN MARCAS, SIN FECHA.
 
 COPY FACEBOOK: 2 a 4 párrafos breves, claro y publicable; cierra con pregunta o recomendación natural cuando aplique; hashtags aparte (3-5).`,
