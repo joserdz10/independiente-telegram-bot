@@ -1,72 +1,69 @@
-# El Independiente de Hidalgo Digital — Telegram + OpenAI directo
+# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v4
 
-Sin n8n. Arquitectura:
+Arquitectura: Telegram -> webhook Node.js en Railway -> OpenAI Responses API + Web Search -> mesa editorial -> aprobación -> GPT Image (solo fondo visual) -> renderer rígido del Brand Book -> Telegram.
 
-Telegram privado -> webhook Node.js -> OpenAI Responses API + Web Search -> Telegram.
+## Qué cambia en v4
 
-## Qué hace esta v1
+- Integra un **Brand Book operativo estricto** en `src/brand-book.js`.
+- El prompt editorial y el prompt de imagen comparten las mismas reglas de identidad.
+- El renderer valida la pieza antes de exportarla.
+- Formatos A/B/C ya no son solo una recomendación: tienen layouts distintos y obligatorios.
+- Formato B: una sola escena/foto dominante; el validador rechaza prompts que pidan collage o mosaico.
+- Formato A: personaje/escena institucional con texto a la izquierda.
+- Formato C: dato/cifra dominante.
+- Titular máximo 12 palabras y bajadas recortadas a longitudes editoriales seguras.
+- No se renderizan fechas por defecto.
+- Footer e isotipo siguen siendo assets fijos exactos; nunca los genera la IA.
+- Paleta fija: verde mineral, hueso, carbón y cobre; acentos de seguridad/deportes solo cuando corresponde.
+- El Dockerfile intenta instalar en Railway las tipografías oficiales **Newsreader, Sora e Inter** durante el build; si una descarga externa falla, el renderer usa fallbacks seguros para no tumbar el bot. No se incluyen archivos de fuentes en el repositorio/ZIP.
+- Mesas programadas a las **08:00, 12:00 y 17:00**, zona `America/Mexico_City`.
 
-- `/mesa`: busca 5 historias actuales: Local/Hidalgo, Seguridad, Política Hidalgo, Política Nacional y Deportes.
-- Cada historia llega con botones `Producir`, `Otro enfoque`, `Descartar`.
-- `Producir`: vuelve a verificar la noticia, genera titular + copy Facebook + hashtags y renderiza una pieza 1080x1350.
-- El footer NO se genera con IA: usa `assets/footer_master.png`, el asset exacto aprobado.
-- El arte v1 es text/data-first para garantizar consistencia. En la siguiente iteración se puede añadir envío de fotografía por Telegram y composición sobre esa foto.
+## Reglas clave de identidad
 
-## 1. Requisitos
+El sistema visual es **Territorio Independiente**.
 
-- Node.js 20+
-- Bot de Telegram creado con BotFather
-- Clave de OpenAI API
-- Un hosting HTTPS público (Render es suficiente)
+- A = personaje / política / declaración.
+- B = fotografía dominante / local / servicio público / seguridad / clima / movilidad / educación.
+- C = dato / cifra / comparativo / economía / resultados / deportes.
+- Una sola escena.
+- Sin collage en B.
+- Sin fechas innecesarias.
+- Sin texto, logos, footer o marcas dentro del fondo generado por IA.
+- El renderer coloca categoría, titular, bajada, dato, isotipo, fuente y footer maestro.
+- Salida estándar: 1080x1350.
 
-## 2. Configuración local
+## Variables Railway
 
-```bash
-cp .env.example .env
-npm install
-npm start
-```
+Obligatorias:
+- `TELEGRAM_BOT_TOKEN`
+- `OPENAI_API_KEY`
+- `PUBLIC_BASE_URL`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `ADMIN_TELEGRAM_USER_ID`
+- `EDITORIAL_CHAT_ID`
 
-Variables:
+Recomendadas:
+- `OPENAI_MODEL=gpt-5.6-sol`
+- `OPENAI_IMAGE_MODEL=gpt-image-2`
+- `OPENAI_IMAGE_QUALITY=medium`
+- `ENABLE_AI_VISUALS=true`
+- `MESA_CRON=0 8,12,17 * * *`
+- `MESA_TIMEZONE=America/Mexico_City`
 
-- `TELEGRAM_BOT_TOKEN`: token de BotFather.
-- `OPENAI_API_KEY`: clave de la API de OpenAI.
-- `OPENAI_MODEL`: por defecto `gpt-5.5`; cámbialo si tu proyecto usa otro modelo compatible.
-- `PUBLIC_BASE_URL`: URL HTTPS pública del servicio.
-- `TELEGRAM_WEBHOOK_SECRET`: secreto largo propio.
-- `ALLOWED_TELEGRAM_USER_ID`: tu Telegram user id, para que el bot solo responda a ti.
+## Operación
 
-## 3. Despliegue en Render
+- `/start` — ayuda.
+- `/mesa` — mesa manual.
+- `🎨 Generar gráfica` — produce la nota aprobada bajo el Brand Book.
+- `/grafica 1,3` — produce varias de la mesa más reciente.
+- `♻️ Otro enfoque` — reformula el ángulo sin alterar hechos.
+- `❌ Descartar` — descarta.
 
-1. Sube este proyecto a un repositorio privado de GitHub.
-2. En Render: New -> Web Service -> conecta el repositorio.
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Agrega todas las variables de entorno.
-6. Copia la URL pública de Render a `PUBLIC_BASE_URL`.
-7. Abre Shell en Render y ejecuta `npm run setup:webhook` una vez.
-8. En Telegram envía `/start` y luego `/mesa`.
+## Despliegue sobre tu bot actual
 
-## Seguridad
-
-- Nunca subas `.env` al repositorio.
-- No compartas el token de Telegram ni la API key.
-- Configura `ALLOWED_TELEGRAM_USER_ID` para uso privado.
-- El webhook valida `X-Telegram-Bot-Api-Secret-Token`.
-
-## Siguiente mejora recomendada
-
-Agregar recepción de fotos en Telegram: seleccionas una noticia, mandas la fotografía real, el backend la encuadra dentro de Formato A/B/C y coloca automáticamente isotipo + footer maestro sin alterarlos.
-
-## Railway — corrección de tipografías (v2)
-
-Esta versión incluye `Dockerfile` para instalar `fonts-dejavu-core` y evitar cuadros vacíos/tofu en los textos generados por Sharp/libRSVG.
-
-En Railway:
-1. Root Directory: `/independiente_openai_telegram_direct_v2` si subes esta carpeta tal cual, o `/` si subes su contenido a la raíz del repo.
-2. Builder: Dockerfile (si Railway lo detecta, selecciónalo).
-3. Build Command: dejar vacío cuando uses Dockerfile.
-4. Start Command: dejar vacío cuando uses Dockerfile; el `CMD` ya es `npm start`.
-5. Mantén las mismas variables de entorno.
-
-La imagen de Fase 3 sigue siendo text/data-first: no inventa una fotografía periodística. El isotipo y el footer son assets fijos y se insertan sin redibujarse.
+1. Sustituye los archivos actuales del repo por los de v4.
+2. Conserva `assets/footer_master.png` e `assets/isotipo_i.png` de esta versión: son los assets maestros aprobados.
+3. Haz commit en GitHub.
+4. Railway redeployará automáticamente con Dockerfile.
+5. No necesitas cambiar dominio ni webhook si sigues usando el mismo servicio.
+6. Revisa `/health` y prueba `/mesa` + una sola `🎨 Generar gráfica` antes de producción masiva.

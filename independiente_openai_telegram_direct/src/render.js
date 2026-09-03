@@ -1,133 +1,90 @@
 import sharp from "sharp";
 import path from "node:path";
 import fs from "node:fs";
+import { BRAND, validateProduction } from "./brand-book.js";
 
-const W = 1080, H = 1350;
+const W = BRAND.canvas.width, H = BRAND.canvas.height;
 const footerPath = path.resolve("assets/footer_master.png");
 const logoPath = path.resolve("assets/isotipo_i.png");
 const OUT = path.resolve("output");
+const c = BRAND.colors;
+const HEADLINE = `${BRAND.fonts.headline}, DejaVu Serif, serif`;
+const UI = `${BRAND.fonts.ui}, DejaVu Sans, sans-serif`;
+const BODY = `${BRAND.fonts.body}, DejaVu Sans, sans-serif`;
+const M = BRAND.layout.margin;
 
-const colors = {
-  green: "#0E2A28",
-  green2: "#173C3A",
-  green3: "#0A211F",
-  copper: "#C66A3D",
-  bone: "#FAF8F3",
-  muted: "#D9D2C5",
-  carbon: "#252422",
-};
+function esc(s="") { return String(s).replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch])); }
+function wrap(text,max=28){const words=String(text||"").trim().split(/\s+/).filter(Boolean);const lines=[];let line="";for(const word of words){const t=(line+" "+word).trim();if(t.length<=max)line=t;else{if(line)lines.push(line);line=word;}}if(line)lines.push(line);return lines;}
+function tspans(lines,x,y,dy){return lines.map((l,i)=>`<tspan x="${x}" y="${y+i*dy}">${esc(l)}</tspan>`).join("");}
+function accentFor(section=""){if(section.includes("SEGURIDAD"))return c.security;if(section.includes("DEPORTES"))return c.sports;return c.copper;}
+function categoryLabel(section=""){return String(section||"LOCAL/HIDALGO").replaceAll("/"," · ");}
+function topo(opacity=0.11){return `<g opacity="${opacity}" stroke="${c.copper}" fill="none" stroke-width="1.2">${Array.from({length:14},(_,i)=>`<path d="M -80 ${90+i*72} C 210 ${38+i*70}, 470 ${150+i*58}, 1150 ${68+i*71}"/>`).join("")}</g>`;}
+function chip(section,accent){return `<rect x="${M}" y="54" rx="11" width="455" height="66" fill="${c.mineral}" fill-opacity="0.96" stroke="${accent}" stroke-width="2"/><rect x="${M}" y="54" rx="11" width="11" height="66" fill="${accent}"/><text x="${M+31}" y="97" fill="${c.bone}" font-family="${UI}" font-size="27" font-weight="800">${esc(categoryLabel(section))}</text>`;}
 
-const SANS = "DejaVu Sans, sans-serif";
-const SERIF = "DejaVu Serif, serif";
-
-function esc(s="") {
-  return String(s).replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function prepareBackground(backgroundPath, format, mainH) {
+  if (!backgroundPath || !fs.existsSync(backgroundPath)) return null;
+  const position = format === "A" ? "right" : "attention";
+  const img = sharp(backgroundPath).resize(W, mainH, { fit:"cover", position });
+  if (format === "B") return img.modulate({ brightness:0.86, saturation:0.88 }).png().toBuffer();
+  if (format === "A") return img.modulate({ brightness:0.76, saturation:0.80 }).png().toBuffer();
+  return img.modulate({ brightness:0.48, saturation:0.62 }).blur(0.4).png().toBuffer();
 }
 
-function wrap(text, max=28) {
-  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
-  const lines=[]; let line="";
-  for (const word of words) {
-    const t=(line+" "+word).trim();
-    if (t.length<=max) line=t;
-    else { if(line) lines.push(line); line=word; }
-  }
-  if(line) lines.push(line);
-  return lines;
+function svgA({mainH,section,accent,p}) {
+  const headline=wrap(p.headline.toUpperCase(),21).slice(0,4);
+  const sub=wrap(p.subheadline,39).slice(0,3);
+  const titleY=300, dy=82, divider=titleY+headline.length*dy+10, subY=divider+58;
+  const stat=p.key_stat?`<rect x="${M}" y="${Math.min(subY+sub.length*38+45,880)}" width="420" height="145" rx="20" fill="${c.mineralDeep}" fill-opacity="0.92" stroke="${accent}" stroke-width="3"/><text x="${M+28}" y="${Math.min(subY+sub.length*38+105,940)}" fill="${accent}" font-family="${UI}" font-size="50" font-weight="800">${esc(p.key_stat)}</text><text x="${M+28}" y="${Math.min(subY+sub.length*38+142,977)}" fill="${c.bone}" font-family="${BODY}" font-size="19" font-weight="650">${esc(p.key_stat_label)}</text>`:"";
+  return `<defs><linearGradient id="shadeA" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.mineralDeep}" stop-opacity="0.99"/><stop offset="0.55" stop-color="${c.mineralDeep}" stop-opacity="0.90"/><stop offset="0.80" stop-color="${c.mineralDeep}" stop-opacity="0.48"/><stop offset="1" stop-color="${c.mineralDeep}" stop-opacity="0.08"/></linearGradient></defs><rect width="1080" height="${mainH}" fill="url(#shadeA)"/>${topo(0.08)}${chip(section,accent)}<text fill="${c.bone}" font-family="${HEADLINE}" font-size="67" font-weight="900">${tspans(headline,M,titleY,dy)}</text><rect x="${M}" y="${divider}" width="118" height="7" fill="${accent}"/><text fill="${c.sand}" font-family="${BODY}" font-size="26" font-weight="500">${tspans(sub,M,subY,38)}</text>${stat}`;
 }
 
-function tspans(lines, x, y, dy) {
-  return lines.map((l,i)=>`<tspan x="${x}" y="${y+i*dy}">${esc(l)}</tspan>`).join("");
+function svgB({mainH,section,accent,p}) {
+  const headline=wrap(p.headline.toUpperCase(),24).slice(0,4);
+  const sub=wrap(p.subheadline,43).slice(0,2);
+  const dy=80, titleY=mainH-390-(headline.length-1)*dy, divider=titleY+headline.length*dy+8, subY=divider+52;
+  const stat=p.key_stat?`<rect x="735" y="${mainH-255}" width="287" height="162" rx="20" fill="${c.mineralDeep}" fill-opacity="0.93" stroke="${accent}" stroke-width="3"/><text x="878" y="${mainH-186}" text-anchor="middle" fill="${accent}" font-family="${UI}" font-size="56" font-weight="800">${esc(p.key_stat)}</text><text x="878" y="${mainH-145}" text-anchor="middle" fill="${c.bone}" font-family="${BODY}" font-size="17" font-weight="650">${esc(p.key_stat_label)}</text>`:"";
+  return `<defs><linearGradient id="shadeB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.mineralDeep}" stop-opacity="0.05"/><stop offset="0.42" stop-color="${c.mineralDeep}" stop-opacity="0.08"/><stop offset="0.70" stop-color="${c.mineralDeep}" stop-opacity="0.55"/><stop offset="1" stop-color="${c.mineralDeep}" stop-opacity="0.98"/></linearGradient></defs><rect width="1080" height="${mainH}" fill="url(#shadeB)"/>${topo(0.055)}${chip(section,accent)}<text fill="${c.bone}" font-family="${HEADLINE}" font-size="66" font-weight="900">${tspans(headline,M,titleY,dy)}</text><rect x="${M}" y="${divider}" width="118" height="7" fill="${accent}"/><text fill="${c.bone}" font-family="${BODY}" font-size="26" font-weight="600">${tspans(sub,M,subY,38)}</text>${stat}`;
 }
 
-function sectionAccent(section="") {
-  if (section.includes("SEGURIDAD")) return "#B7443A";
-  if (section.includes("DEPORTES")) return "#3B7C54";
-  if (section.includes("POLÍTICA")) return colors.copper;
-  return colors.copper;
+function svgC({mainH,section,accent,p}) {
+  const headline=wrap(p.headline.toUpperCase(),24).slice(0,3);
+  const sub=wrap(p.subheadline,43).slice(0,2);
+  const stat=p.key_stat || "DATO";
+  const label=p.key_stat_label || "INFORMACIÓN CLAVE";
+  const statFont=stat.length<=5?176:stat.length<=10?132:96;
+  return `<rect width="1080" height="${mainH}" fill="${c.mineralDeep}" fill-opacity="0.78"/>${topo(0.10)}${chip(section,accent)}<text x="${M}" y="278" fill="${c.bone}" font-family="${HEADLINE}" font-size="58" font-weight="900">${tspans(headline,M,278,70)}</text><rect x="${M}" y="${310+headline.length*70}" width="118" height="7" fill="${accent}"/><rect x="${M}" y="600" width="968" height="330" rx="28" fill="${c.mineral}" fill-opacity="0.87" stroke="${accent}" stroke-width="3"/><text x="540" y="790" text-anchor="middle" fill="${accent}" font-family="${UI}" font-size="${statFont}" font-weight="800">${esc(stat)}</text><text x="540" y="858" text-anchor="middle" fill="${c.bone}" font-family="${UI}" font-size="28" font-weight="750">${esc(label)}</text><text fill="${c.sand}" font-family="${BODY}" font-size="25" font-weight="500">${tspans(sub,M,1010,36)}</text>`;
 }
 
-export async function renderStory(story, production) {
+export async function renderStory(story, production, backgroundPath=null) {
   fs.mkdirSync(OUT,{recursive:true});
-
   if (!fs.existsSync(footerPath)) throw new Error(`No se encontró footer maestro: ${footerPath}`);
   if (!fs.existsSync(logoPath)) throw new Error(`No se encontró isotipo maestro: ${logoPath}`);
 
-  const section = String(story.section || "LOCAL/HIDALGO");
-  const accent = sectionAccent(section);
-  const headlineLines = wrap(String(production.headline || story.headline).toUpperCase(), 22).slice(0,4);
-  const subLines = wrap(production.subheadline || story.summary || "", 48).slice(0,4);
-  const chip = section.replaceAll("/", " · ");
-  const headlineY = 270;
-  const headlineDy = 86;
-  const dividerY = headlineY + Math.max(1, headlineLines.length) * headlineDy + 18;
-  const subY = dividerY + 74;
+  const validated = validateProduction(story, production);
+  if (!validated.ok) throw new Error(`Brand Book: ${validated.errors.join("; ")}`);
+  if (validated.warnings.length) console.warn("Brand Book warnings:", validated.warnings.join(" | "));
+  const p=validated.production;
 
-  const footer = await sharp(footerPath).resize({ width: W }).png().toBuffer();
-  const footerMeta = await sharp(footer).metadata();
-  const footerH = footerMeta.height || 162;
-  const mainH = H - footerH;
+  const section=String(story.section||"LOCAL/HIDALGO"), accent=accentFor(section), format=p.format;
+  const footer=await sharp(footerPath).resize({width:W}).png().toBuffer();
+  const footerH=(await sharp(footer).metadata()).height||162;
+  const mainH=H-footerH;
+  const logo=await sharp(logoPath).resize({width:BRAND.layout.logoSize,height:BRAND.layout.logoSize,fit:"contain"}).png().toBuffer();
+  const bg=await prepareBackground(backgroundPath,format,mainH);
 
-  const logo = await sharp(logoPath)
-    .resize({ width: 118, height: 118, fit: "contain" })
-    .png()
-    .toBuffer();
+  const base = bg ? "" : `<rect width="1080" height="${mainH}" fill="${c.mineralDeep}"/>`;
+  const body = format === "A" ? svgA({mainH,section,accent,p}) : format === "C" ? svgC({mainH,section,accent,p}) : svgB({mainH,section,accent,p});
+  const sourceY=mainH-30;
+  const svg=Buffer.from(`<svg width="${W}" height="${mainH}" viewBox="0 0 ${W} ${mainH}" xmlns="http://www.w3.org/2000/svg">${base}${body}<text x="${M}" y="${sourceY}" fill="${c.sand}" font-family="${BODY}" font-size="16" font-weight="500">FUENTE: ${esc(p.source_name||story.source_name||"")}</text></svg>`);
 
-  const keyStat = String(production.key_stat || "").trim();
-  const keyLabel = String(production.key_stat_label || "").trim();
-  const dataBlock = keyStat ? `
-    <rect x="650" y="735" width="350" height="250" rx="28" fill="${colors.green3}" stroke="${accent}" stroke-width="3"/>
-    <text x="825" y="845" text-anchor="middle" fill="${accent}" font-family="${SANS}" font-weight="800" font-size="76">${esc(keyStat)}</text>
-    <text x="825" y="910" text-anchor="middle" fill="${colors.bone}" font-family="${SANS}" font-weight="700" font-size="25">${esc(keyLabel)}</text>
-    <path d="M745 945 C 790 930, 835 930, 895 945" stroke="${accent}" stroke-width="5" fill="none" stroke-linecap="round"/>` : "";
-
-  const svg = Buffer.from(`
-  <svg width="${W}" height="${mainH}" viewBox="0 0 ${W} ${mainH}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="${colors.green}"/>
-        <stop offset="1" stop-color="#071B1A"/>
-      </linearGradient>
-      <filter id="grain">
-        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
-        <feColorMatrix type="saturate" values="0"/>
-        <feComponentTransfer><feFuncA type="table" tableValues="0 0.035"/></feComponentTransfer>
-      </filter>
-    </defs>
-
-    <rect width="1080" height="${mainH}" fill="url(#g)"/>
-    <rect width="1080" height="${mainH}" filter="url(#grain)" opacity="0.45"/>
-
-    <g opacity="0.22" stroke="${colors.copper}" fill="none" stroke-width="1.3">
-      ${Array.from({length:15},(_,i)=>`<path d="M -60 ${95+i*70} C 220 ${38+i*70}, 435 ${152+i*58}, 1130 ${70+i*70}"/>`).join("")}
-    </g>
-
-    <rect x="54" y="54" rx="12" width="430" height="70" fill="${colors.green2}" stroke="${accent}" stroke-width="2"/>
-    <rect x="54" y="54" rx="12" width="12" height="70" fill="${accent}"/>
-    <text x="88" y="101" fill="${colors.bone}" font-family="${SANS}" font-size="29" font-weight="800">${esc(chip)}</text>
-
-    <text fill="${colors.bone}" font-family="${SERIF}" font-size="69" font-weight="900">${tspans(headlineLines,54,headlineY,headlineDy)}</text>
-    <rect x="54" y="${dividerY}" width="118" height="8" fill="${accent}"/>
-
-    <text fill="${colors.muted}" font-family="${SANS}" font-size="28">${tspans(subLines,54,subY,41)}</text>
-
-    ${dataBlock}
-
-    <text x="54" y="${mainH-86}" fill="${colors.muted}" font-family="${SANS}" font-size="19">FUENTE: ${esc(production.source_name || story.source_name || "")}</text>
-    <text x="54" y="${mainH-52}" fill="${production.verified ? colors.muted : accent}" font-family="${SANS}" font-size="17" font-weight="700">${esc(production.verified ? "INFORMACIÓN VERIFICADA" : "REQUIERE REVISIÓN EDITORIAL")}</text>
-  </svg>`);
-
-  const main = await sharp(svg).png().toBuffer();
-  const out = path.join(OUT, `${story.id}.png`);
-
-  await sharp({ create:{ width:W, height:H, channels:4, background:colors.green }})
-    .composite([
-      { input:main, top:0, left:0 },
-      { input:logo, top:48, left:W-48-118 },
-      { input:footer, top:H-footerH, left:0 },
-    ])
-    .png()
-    .toFile(out);
-
+  const composites=[];
+  if(bg) composites.push({input:bg,top:0,left:0});
+  composites.push(
+    {input:await sharp(svg).png().toBuffer(),top:0,left:0},
+    {input:logo,top:44,left:W-44-BRAND.layout.logoSize},
+    {input:footer,top:H-footerH,left:0}
+  );
+  const out=path.join(OUT,`${story.id}.png`);
+  await sharp({create:{width:W,height:H,channels:4,background:c.mineral}}).composite(composites).png().toFile(out);
   return out;
 }
