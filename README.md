@@ -52,7 +52,8 @@ Recomendadas:
 
 ## Operación
 
-- `/start` — ayuda.
+- `/start` — registra el chat editorial y muestra ayuda.
+- `/estado` — confirma si este chat tiene controles de producción activos.
 - `/mesa` — mesa manual.
 - `🎨 Generar gráfica` — produce la nota aprobada bajo el Brand Book.
 - `/grafica 1,3` — produce varias de la mesa más reciente.
@@ -76,3 +77,14 @@ Recomendadas:
 - Cada nota enviada al propietario editorial incluye botones: `🎨 Generar gráfica`, `♻️ Otro enfoque` y `❌ Descartar`.
 - Si a la hora programada todavía no existe un chat registrado, la mesa se genera y se guarda internamente; puede consultarse después con `/ultima`.
 - Para producción con múltiples usuarios sigue siendo recomendable configurar `ADMIN_TELEGRAM_USER_ID` explícitamente.
+
+
+## V4.2 - Botones de producción en el mismo chat
+
+- Corrige el caso en que la mesa aparecía sin botones cuando no existía `ADMIN_TELEGRAM_USER_ID`.
+- El chat editorial registrado por `/start` o `/mesa` queda autorizado para producir piezas aunque no haya un admin configurado por variable.
+- Las mesas automáticas de 08:00, 12:00 y 17:00 muestran debajo de cada nota los botones `🎨 Generar gráfica`, `♻️ Otro enfoque` y `❌ Descartar`.
+- Los callbacks y `/grafica` aceptan al chat editorial como autoridad de producción.
+- `/health` reporta `version: 4.2.0` y `production_controls`.
+
+En V4.2 no es obligatorio configurar `EDITORIAL_CHAT_ID` para un uso privado: el primer `/start` o `/mesa` en chat privado registra el destino. Telegram sí necesita internamente un chat de destino para poder enviar mensajes programados, pero el bot lo aprende automáticamente. Para un entorno público/multiusuario, configura `ADMIN_TELEGRAM_USER_ID` y `EDITORIAL_CHAT_ID` explícitamente.
