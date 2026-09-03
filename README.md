@@ -1,73 +1,42 @@
-# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v4.3
+# El Independiente de Hidalgo Digital — Telegram + OpenAI directo v5
 
-Arquitectura: Telegram -> webhook Node.js en Railway -> OpenAI Responses API + Web Search -> mesa editorial -> aprobación -> GPT Image (solo fondo visual) -> renderer rígido del Brand Book -> Telegram.
+Versión enfocada en reproducir de forma consistente el estilo visual aprobado por el usuario: fotografía dominante relacionada con la nota, tipografía institucional, composición limpia, texto totalmente contenido, fuente discreta y footer maestro exacto.
 
-## Qué cambia en v4.3
+## Cambios principales de v5
 
-- Integra tu feedback operativo sobre las **opciones A, B y C**.
-- **Opción / Formato A** ahora obliga al bot a priorizar un fondo visual directamente relacionado con la nota: persona, lugar o hecho específico, evitando escenas genéricas cuando el sujeto está claro.
-- **Opción / Formato B** mantiene fotografía dominante, pero con reglas más estrictas para evitar saturación y desbordes de texto.
-- **Opción / Formato C** ahora prohíbe la repetición innecesaria del mismo dato entre titular, cifra y etiqueta secundaria.
-- Se refuerza la instrucción de usar la **tipografía institucional del manual**.
-- Se endurece la regla de que el texto debe quedar **encuadrado dentro del lienzo**.
-- El renderer ahora ajusta mejor cifras y cajas de dato para que no se salgan del post.
-- `/health` reporta `version: 4.3.0` y `brand_book: 4.3-strict`.
+- Prompt visual final integrado en `src/brand-book.js` y `src/openai-news.js`.
+- El renderer es ahora la autoridad final de encuadre: ajusta tamaño y saltos de línea para evitar que el texto se salga del lienzo.
+- Formato A: sujeto/lugar/hecho específico como foco visual, composición con texto protegido a la izquierda.
+- Formato B: fotografía dominante, sin collage, con caja de dato compacta.
+- Formato C: cifra protagonista sin repetir el mismo valor dentro del titular.
+- Tipografía institucional: Newsreader / Sora / Inter.
+- Footer e isotipo siguen siendo assets fijos exactos.
+- Fuente de la nota se ajusta automáticamente dentro del ancho disponible.
+- `/health` reporta `version: 5.0.0` y `brand_book: 5.0-strict`.
 
-## Reglas visuales integradas
+## Horarios de mesa
 
-### Formato A
-- Imagen visual directamente relacionada con la nota.
-- Si habla de una persona, el visual debe corresponder a esa persona.
-- Si habla de un lugar, el visual debe corresponder a ese lugar o entorno reconocible.
-- Evitar fondos genéricos.
-- Una sola escena.
-- Texto completamente dentro del lienzo.
+- 08:00
+- 12:00
+- 17:00
+- Zona: `America/Mexico_City`
 
-### Formato B
-- Fotografía/escena dominante.
-- Sin collage.
-- Sin saturación.
-- Titular y bajada compactos.
-- Cajas de dato ajustadas para no salirse.
+## Sustitución en GitHub
 
-### Formato C
-- Cifra protagonista.
-- El texto secundario debe complementar, no repetir.
-- Diseño limpio y sintético.
-- Caja de cifra y tipografía con ajuste automático.
+1. Sustituye el contenido actual del repo por el contenido de este paquete.
+2. Mantén el Root Directory de Railway en `/`.
+3. Haz Commit en GitHub.
+4. Railway deberá mostrar en Deploy Logs:
 
-## Variables Railway
+```text
+independiente-telegram-openai@5.0.0 start
+```
 
-Obligatorias:
-- `TELEGRAM_BOT_TOKEN`
-- `OPENAI_API_KEY`
-- `PUBLIC_BASE_URL`
-- `TELEGRAM_WEBHOOK_SECRET`
+5. En Telegram prueba `/estado`, `/mesa` y una gráfica A, B y C.
 
-Recomendadas:
-- `ADMIN_TELEGRAM_USER_ID`
-- `EDITORIAL_CHAT_ID`
-- `OPENAI_MODEL=gpt-5.6-sol`
-- `OPENAI_IMAGE_MODEL=gpt-image-2`
-- `OPENAI_IMAGE_QUALITY=medium`
-- `ENABLE_AI_VISUALS=true`
-- `MESA_CRON=0 8,12,17 * * *`
-- `MESA_TIMEZONE=America/Mexico_City`
+## Assets maestros
 
-## Operación
+- `assets/footer_master.png`
+- `assets/isotipo_i.png`
 
-- `/start` — registra el chat editorial y muestra ayuda.
-- `/estado` — confirma si este chat tiene controles de producción activos.
-- `/mesa` — mesa manual.
-- `🎨 Generar gráfica` — produce la nota aprobada bajo el Brand Book.
-- `/grafica 1,3` — produce varias de la mesa más reciente.
-- `♻️ Otro enfoque` — reformula el ángulo sin alterar hechos.
-- `❌ Descartar` — descarta.
-
-## Sustitución en tu repo
-
-1. Borra o reemplaza el contenido actual del repo por el contenido de este paquete.
-2. Conserva `assets/footer_master.png` e `assets/isotipo_i.png` de esta versión.
-3. Haz commit en GitHub.
-4. Railway redeployará automáticamente.
-5. Prueba `/mesa` y luego `🎨 Generar gráfica` en una nota de cada formato.
+No deben ser redibujados por IA.

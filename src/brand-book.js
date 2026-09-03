@@ -1,7 +1,7 @@
 export const BRAND = Object.freeze({
   name: "El Independiente de Hidalgo Digital",
   system: "Territorio Independiente",
-  version: "4.3-strict",
+  version: "5.0-strict",
   canvas: { width: 1080, height: 1350, ratio: "4:5" },
   colors: {
     mineral: "#173C3A",
@@ -100,6 +100,14 @@ RESTRICCIONES ABSOLUTAS
 - No diseño partidista, propagandístico, caricaturesco o sensacionalista.
 - No generar texto incrustado dentro del fondo visual.
 - No duplicar información en Formato C.
+
+
+REFERENCIA VISUAL APROBADA — REGLA DE SALIDA
+- La composición final debe seguir el nivel de limpieza del ejemplo editorial aprobado por el usuario: fotografía dominante relacionada con la nota, banda de categoría compacta arriba, isotipo fijo arriba a la derecha, titular editorial perfectamente contenido, bajada corta, dato destacado solo si aporta, fuente discreta y footer maestro exacto.
+- La prioridad número uno es LEGIBILIDAD Y ENCUADRE. Ningún titular, cifra, etiqueta o bajada puede tocar o rebasar el borde derecho, izquierdo, superior, inferior o el footer.
+- Si un titular no cabe: primero reescribirlo de forma más breve sin cambiar el hecho; después reducir tamaño; después aumentar saltos de línea. Nunca recortar ni dejar texto fuera del lienzo.
+- El renderer es la autoridad final para tamaños, saltos y márgenes; el modelo no debe intentar forzar titulares extensos.
+- Mantener mínimo 56 px de margen lateral y una zona de seguridad adicional de 24 px para cajas y textos.
 
 CONTROL DE CALIDAD
 Antes de entregar una instrucción visual, confirma mentalmente:

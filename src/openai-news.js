@@ -135,13 +135,15 @@ export async function produceStory(story, angle = "normal") {
 
 ${BRAND_BOOK_PROMPT}
 
-APLICACIÓN OPERATIVA:
-- A: personaje/política/declaración. Si la nota trata sobre una persona o lugar identificable, el visual debe corresponder a ese sujeto y no ser genérico.
-- B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad.
-- C: dato/cifra/resultado dominante. Si se usa key_stat, key_stat_label debe ser breve y complementaria (periodo, alcance, universo o contraste), nunca una repetición literal del titular o la bajada.
-- El titular visual debe ser claro y máximo 12 palabras.
+APLICACIÓN OPERATIVA — REFERENCIA APROBADA:
+- La salida debe conservar el estilo limpio del arte aprobado por el usuario: imagen dominante, categoría compacta, isotipo fijo, titular editorial dentro de márgenes, bajada breve, dato solo si aporta, fuente discreta y footer maestro exacto.
+- A: personaje/política/declaración. Si la nota trata sobre una persona o lugar identificable, el visual debe corresponder a ese sujeto y no ser genérico. Prioriza una apariencia fotográfica natural y periodística. Si no existe una fotografía de fuente proporcionada al sistema, no la presentes como cobertura documental real.
+- B: una sola fotografía/escena dominante para local, servicio público, clima, seguridad, movilidad. Sin collage.
+- C: dato/cifra/resultado dominante. Si se usa key_stat, NO repitas el valor de key_stat dentro del titular visual. El titular debe nombrar el fenómeno y la cifra va solo en el bloque de dato. key_stat_label debe ser breve y complementaria (periodo, alcance, universo o contraste), nunca una repetición literal del titular o la bajada.
+- El titular visual debe ser claro, preferentemente 6-10 palabras y máximo 12. Si el concepto no cabe, reescribe de forma más breve sin alterar el hecho.
 - subheadline máximo 2 líneas; support_text muy breve.
-- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía. Si la cifra es una fecha o frase extensa, manténla compacta para que quepa en una caja editorial.
+- key_stat solo si existe una cifra fuerte y verificada; de lo contrario cadena vacía. Si la cifra es una fecha o frase extensa, manténla compacta.
+- Nunca propongas texto que dependa de salirse de una caja o margen para ser legible.
 - visual_prompt debe describir únicamente el COMPONENTE VISUAL DE FONDO, SIN TEXTO, SIN LOGOS, SIN FOOTER, SIN MARCAS, SIN FECHA.
 
 COPY FACEBOOK: 2 a 4 párrafos breves, claro y publicable; cierra con pregunta o recomendación natural cuando aplique; hashtags aparte (3-5).`,
