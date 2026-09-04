@@ -56,3 +56,11 @@ Luego prueba `/estado`, `/mesa` y genera una pieza de cada formato.
 ## V6.0 — Aprobación y entrega a Google Drive
 
 Después de generar una pieza aparece el botón `✅ Aprobar y enviar a Drive`. Al pulsarlo, el bot sube `arte.png`, `copy_redes.txt` y `metadata.json` a una carpeta organizada por año/mes/día/categoría. Consulta `DRIVE_INTEGRATION.md` para las variables de Railway.
+
+## v6.1 — búsqueda automática de fotografía real
+- Si una nota exige foto real y la página fuente no ofrece una imagen usable, el bot ya no detiene la producción.
+- Hace una búsqueda web automática con OpenAI Web Search para localizar páginas oficiales o periodísticas con una fotografía real del sujeto/evento.
+- Extrae `og:image`, `twitter:image` y fotografías grandes del artículo, validando tamaño y proporción.
+- Como respaldo adicional intenta Wikimedia Commons.
+- Si absolutamente ninguna fotografía real puede descargarse, entrega de todos modos una pieza editorial de marca sin inventar a la persona/equipo; nunca deja la nota sin gráfica.
+- La fuente de la fotografía queda guardada en el estado de la historia para trazabilidad.

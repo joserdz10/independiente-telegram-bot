@@ -131,6 +131,9 @@ export async function uploadApprovedPublication({ story, production, imagePath }
     format: production.format || story.format, source_name: production.source_name || story.source_name,
     source_url: production.source_url || story.source_url, hashtags: production.hashtags || [],
     facebook_copy: production.facebook_copy || story.facebook_copy || "",
+    photo_source_url: story.photo_source_url || null,
+    photo_image_url: story.photo_image_url || null,
+    photo_source_via: story.photo_source_via || null,
   };
   const meta = await uploadBytes(publicationFolder, "metadata.json", "application/json; charset=UTF-8", Buffer.from(JSON.stringify(metadata, null, 2), "utf8"));
 
