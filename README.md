@@ -47,7 +47,12 @@ Opcionales para foto de fuente:
 
 ## Verificación después del deploy
 En Railway debes ver:
-- `independiente-telegram-openai@5.3.0 start`
+- `independiente-telegram-openai@6.0.0 start`
 - `Fuentes renderer: titular=Newsreader; UI=Sora; cuerpo=Inter`
 
 Luego prueba `/estado`, `/mesa` y genera una pieza de cada formato.
+
+
+## V6.0 — Aprobación y entrega a Google Drive
+
+Después de generar una pieza aparece el botón `✅ Aprobar y enviar a Drive`. Al pulsarlo, el bot sube `arte.png`, `copy_redes.txt` y `metadata.json` a una carpeta organizada por año/mes/día/categoría. Consulta `DRIVE_INTEGRATION.md` para las variables de Railway.
